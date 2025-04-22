@@ -182,7 +182,7 @@ jobs:
       - name: 🔍 Data Validation
         run: |
           chmod +x ./scripts/post-cdc-sync-validation.sh
-          ./scripts/validate-data.sh \
+          ./scripts/post-cdc-sync-validation.sh \
             --tenant $TENANT \
             --env    $ENVIRONMENT
 
