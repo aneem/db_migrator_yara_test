@@ -1,6 +1,9 @@
 name: 🗄️ DB Migration Pipeline
 
 on:
+  push:
+    branches:
+      - 'main'
   workflow_dispatch:
     inputs:
       solution:
