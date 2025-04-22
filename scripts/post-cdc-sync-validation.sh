@@ -1,0 +1,1 @@
+echo 'Post cdc sync validation Successful'
