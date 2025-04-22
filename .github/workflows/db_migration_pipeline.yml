@@ -1,4 +1,3 @@
-# .github/workflows/db-migration.yml
 name: 🗄️ DB Migration Pipeline
 
 on:
