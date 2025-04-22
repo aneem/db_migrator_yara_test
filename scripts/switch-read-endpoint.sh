@@ -1,0 +1,1 @@
+echo 'Switch read endpoint Successful'

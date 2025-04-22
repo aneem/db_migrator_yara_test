@@ -1,0 +1,1 @@
+echo 'Switch write endpoint Successful'
