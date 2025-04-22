@@ -61,8 +61,8 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
       - name: ✅ Readiness check & DB setup
         run: |
-          chmod +x ./scripts/$SOLUTION/readiness-check.sh
-          ./scripts/$SOLUTION/readiness-check.sh \
+          chmod +x ./scripts/readiness-check.sh
+          ./scripts/readiness-check.sh \
             --endpoint $SRC_ENDPOINT \
             --port     $SRC_PORT \
             --user     $SRC_USER \
@@ -71,8 +71,8 @@ jobs:
             --env      $ENVIRONMENT
       - name: 🏃‍♂️ Run Pre‑Migration SQL
         run: |
-          chmod +x ./scripts/$SOLUTION/pre-migration.sh
-          ./scripts/$SOLUTION/pre-migration.sh \
+          chmod +x ./scripts/pre-migration.sh
+          ./scripts/pre-migration.sh \
             --endpoint $TGT_ENDPOINT \
             --port     $TGT_PORT \
             --user     $TGT_USER \
@@ -82,8 +82,8 @@ jobs:
             --env      $ENVIRONMENT
       - name: 🏃‍♂️ Run Pre‑Migration Validation
         run: |
-          chmod +x ./scripts/$SOLUTION/pre-migration-validation.sh
-          ./scripts/$SOLUTION/pre-migration-validation.sh \
+          chmod +x ./scripts/pre-migration-validation.sh
+          ./scripts/pre-migration-validation.sh \
             --endpoint $TGT_ENDPOINT \
             --port     $TGT_PORT \
             --user     $TGT_USER \
@@ -106,15 +106,15 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
       - name: ▶️ Start DMS (with CDC)
         run: |
-          chmod +x ./scripts/$SOLUTION/start-dms.sh
-          ./scripts/$SOLUTION/start-dms.sh \
+          chmod +x ./scripts/start-dms.sh
+          ./scripts/start-dms.sh \
             --dms-task-arn $DMS_TASK_ARN \
             --tenant        $TENANT \
             --env           $ENVIRONMENT
       - name: ⏳ Wait for CDC to catch up
         run: |
-          chmod +x ./scripts/$SOLUTION/wait-cdc.sh
-          ./scripts/$SOLUTION/wait-cdc.sh \
+          chmod +x ./scripts/wait-cdc.sh
+          ./scripts/wait-cdc.sh \
             --dms-task-arn $DMS_TASK_ARN \
             --tenant        $TENANT \
             --env           $ENVIRONMENT
@@ -133,33 +133,33 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
       - name: 🔍 Data Validation
         run: |
-          chmod +x ./scripts/$SOLUTION/validate-data.sh
-          ./scripts/$SOLUTION/validate-data.sh \
+          chmod +x ./scripts/validate-data.sh
+          ./scripts/validate-data.sh \
             --tenant $TENANT \
             --env    $ENVIRONMENT
       - name: 🔀 Switch Reads
         run: |
-          chmod +x ./scripts/$SOLUTION/switch-read-endpoint.sh
-          ./scripts/$SOLUTION/switch-read-endpoint.sh \
+          chmod +x ./scripts/switch-read-endpoint.sh
+          ./scripts/switch-read-endpoint.sh \
             --tenant $TENANT \
             --env    $ENVIRONMENT
       - name: ⏸️ Pause Writes
         run: |
-          chmod +x ./scripts/$SOLUTION/pause-writes.sh
-          ./scripts/$SOLUTION/pause-writes.sh \
+          chmod +x ./scripts/pause-writes.sh
+          ./scripts/pause-writes.sh \
             --tenant $TENANT \
             --env    $ENVIRONMENT
       - name: 🛑 Stop CDC
         run: |
-          chmod +x ./scripts/$SOLUTION/stop-cdc.sh
-          ./scripts/$SOLUTION/stop-cdc.sh \
+          chmod +x ./scripts/stop-cdc.sh
+          ./scripts/stop-cdc.sh \
             --dms-task-arn $DMS_TASK_ARN \
             --tenant        $TENANT \
             --env           $ENVIRONMENT
       - name: 🏃‍♀️ Run Post‑Migration SQL
         run: |
-          chmod +x ./scripts/$SOLUTION/post-migration.sh
-          ./scripts/$SOLUTION/post-migration.sh \
+          chmod +x ./scripts/post-migration.sh
+          ./scripts/post-migration.sh \
             --endpoint $TGT_ENDPOINT \
             --port     $TGT_PORT \
             --user     $TGT_USER \
@@ -169,29 +169,29 @@ jobs:
             --env      $ENVIRONMENT
       - name: ✅ Final Validation
         run: |
-          chmod +x ./scripts/$SOLUTION/post-migration-validation.sh
-          ./scripts/$SOLUTION/post-migration-validation.sh \
+          chmod +x ./scripts/post-migration-validation.sh
+          ./scripts/post-migration-validation.sh \
             --tenant $TENANT \
             --env    $ENVIRONMENT \
             --post
       - name: 🖋️ Switch Writes
         run: |
-          chmod +x ./scripts/$SOLUTION/switch-write-endpoint.sh
-          ./scripts/$SOLUTION/switch-write-endpoint.sh \
+          chmod +x ./scripts/switch-write-endpoint.sh
+          ./scripts/switch-write-endpoint.sh \
             --tenant $TENANT \
             --env    $ENVIRONMENT
       - name: 🧹 Cleanup DMS
         run: |
-          chmod +x ./scripts/$SOLUTION/cleanup-dms.sh
-          ./scripts/$SOLUTION/cleanup-dms.sh \
+          chmod +x ./scripts/cleanup-dms.sh
+          ./scripts/cleanup-dms.sh \
             --dms-task-arn $DMS_TASK_ARN \
             --tenant        $TENANT \
             --env           $ENVIRONMENT
       - name: 📣 Notify Success to MS Teams
         run: |
-          chmod +x ./scripts/$SOLUTION/notify.sh
-          ./scripts/$SOLUTION/notify.sh \
-            --solution $SOLUTION \
+          chmod +x ./scripts/notify.sh
+          ./scripts/notify.sh \
+            --solution \
             --tenant   $TENANT \
             --env      $ENVIRONMENT \
             --webhook  "$TEAMS_WEBHOOK_URL"
