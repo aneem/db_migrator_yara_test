@@ -1,3 +1,4 @@
+# .github/workflows/db_migration.yml
 name: 🗄️ DB Migration Pipeline
 
 on:
@@ -7,60 +8,73 @@ on:
   workflow_dispatch:
     inputs:
       solution:
-        description: 'Which service? (e.g. ls, is, mp)'
+        description: 'Which service? (e.g. loyalty, intermediate, marketplace)'
         required: true
         type: choice
-        options: [ loyalty, intermediate, marketplace ]
+        options:
+          - loyalty
+          - intermediate
+          - marketplace
       environment:
         description: 'Target environment'
         required: true
         type: choice
-        options: [ preprod, prod ]
+        options:
+          - preprod
+          - prod
       tenant:
         description: 'Tenant code'
         required: true
         type: choice
-        options: [ in, ke, tz, gh, id, ph, th, ug, vn ]
-
-# common env lookups
-x-vars: &common-vars |
-  SOLUTION=${{ github.event.inputs.solution }}
-  ENVIRONMENT=${{ github.event.inputs.environment }}
-  TENANT=${{ github.event.inputs.tenant }}
-
-  SRC_ENDPOINT=${{ secrets[ format('{0}_{1}_{2}_SRC_ENDPOINT', github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
-  SRC_PORT=5432
-  SRC_DB=${{ github.event.inputs.solution }}
-  SRC_USER=${{ secrets[ format('{0}_{1}_{2}_SRC_USER',    github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
-  SRC_PASS=${{ secrets[ format('{0}_{1}_{2}_SRC_PASS',    github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
-
-  TGT_ENDPOINT=${{ secrets[ format('{0}_{1}_{2}_TGT_ENDPOINT', github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
-  TGT_PORT=5432
-  TGT_DB=${{ github.event.inputs.solution }}
-  TGT_USER=${{ secrets[ format('{0}_{1}_{2}_TGT_USER',    github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
-  TGT_PASS=${{ secrets[ format('{0}_{1}_{2}_TGT_PASS',    github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
-
-  DMS_TASK_ARN=${{ secrets[ format('{0}_{1}_{2}_DMS_TASK_ARN', github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
-  AWS_ROLE_ARN=${{ secrets.AWS_ROLE_ARN }}
-  TEAMS_WEBHOOK_URL=${{ secrets.TEAMS_WEBHOOK_URL }}
+        options:
+          - in
+          - ke
+          - tz
+          - gh
+          - id
+          - ph
+          - th
+          - ug
+          - vn
 
 jobs:
   pre-migration:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     env:
-      <<: *common-vars
+      SOLUTION:    ${{ github.event.inputs.solution }}
+      ENVIRONMENT: ${{ github.event.inputs.environment }}
+      TENANT:      ${{ github.event.inputs.tenant }}
+
+      SRC_ENDPOINT: ${{ secrets[ format('{0}_{1}_{2}_SRC_ENDPOINT', github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
+      SRC_PORT:     5432
+      SRC_DB:       ${{ github.event.inputs.solution }}
+      SRC_USER:     ${{ secrets[ format('{0}_{1}_{2}_SRC_USER',    github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
+      SRC_PASS:     ${{ secrets[ format('{0}_{1}_{2}_SRC_PASS',    github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
+
+      TGT_ENDPOINT: ${{ secrets[ format('{0}_{1}_{2}_TGT_ENDPOINT', github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
+      TGT_PORT:     5432
+      TGT_DB:       ${{ github.event.inputs.solution }}
+      TGT_USER:     ${{ secrets[ format('{0}_{1}_{2}_TGT_USER',    github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
+      TGT_PASS:     ${{ secrets[ format('{0}_{1}_{2}_TGT_PASS',    github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
+
+      DMS_TASK_ARN: ${{ secrets[ format('{0}_{1}_{2}_DMS_TASK_ARN', github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
     steps:
       - uses: actions/checkout@v3
+
       - name: Install psql
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
+
       - name: Configure AWS creds
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-region: us-east-1
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
+
       - name: ✅ Readiness check & DB setup
         run: |
           chmod +x ./scripts/readiness-check.sh
@@ -71,6 +85,7 @@ jobs:
             --pass     $SRC_PASS \
             --tenant   $TENANT \
             --env      $ENVIRONMENT
+
       - name: 🏃‍♂️ Run Pre‑Migration SQL
         run: |
           chmod +x ./scripts/pre-migration.sh
@@ -82,6 +97,7 @@ jobs:
             --database $TGT_DB \
             --tenant   $TENANT \
             --env      $ENVIRONMENT
+
       - name: 🏃‍♂️ Run Pre‑Migration Validation
         run: |
           chmod +x ./scripts/pre-migration-validation.sh
@@ -99,13 +115,20 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     env:
-      <<: *common-vars
+      SOLUTION:    ${{ github.event.inputs.solution }}
+      ENVIRONMENT: ${{ github.event.inputs.environment }}
+      TENANT:      ${{ github.event.inputs.tenant }}
+
+      DMS_TASK_ARN: ${{ secrets[ format('{0}_{1}_{2}_DMS_TASK_ARN', github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
     steps:
       - name: Configure AWS creds
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-region: us-east-1
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
+
       - name: ▶️ Start DMS (with CDC)
         run: |
           chmod +x ./scripts/start-dms.sh
@@ -113,6 +136,7 @@ jobs:
             --dms-task-arn $DMS_TASK_ARN \
             --tenant        $TENANT \
             --env           $ENVIRONMENT
+
       - name: ⏳ Wait for CDC to catch up
         run: |
           chmod +x ./scripts/wait-cdc.sh
@@ -125,32 +149,56 @@ jobs:
     needs: start-dms
     runs-on: ubuntu-latest
     env:
-      <<: *common-vars
+      SOLUTION:        ${{ github.event.inputs.solution }}
+      ENVIRONMENT:     ${{ github.event.inputs.environment }}
+      TENANT:          ${{ github.event.inputs.tenant }}
+
+      SRC_ENDPOINT:    ${{ secrets[ format('{0}_{1}_{2}_SRC_ENDPOINT', github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
+      SRC_PORT:        5432
+      SRC_DB:          ${{ github.event.inputs.solution }}
+      SRC_USER:        ${{ secrets[ format('{0}_{1}_{2}_SRC_USER', github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
+      SRC_PASS:        ${{ secrets[ format('{0}_{1}_{2}_SRC_PASS', github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
+
+      TGT_ENDPOINT:    ${{ secrets[ format('{0}_{1}_{2}_TGT_ENDPOINT', github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
+      TGT_PORT:        5432
+      TGT_DB:          ${{ github.event.inputs.solution }}
+      TGT_USER:        ${{ secrets[ format('{0}_{1}_{2}_TGT_USER', github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
+      TGT_PASS:        ${{ secrets[ format('{0}_{1}_{2}_TGT_PASS', github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
+
+      DMS_TASK_ARN:    ${{ secrets[ format('{0}_{1}_{2}_DMS_TASK_ARN', github.event.inputs.solution, github.event.inputs.environment, github.event.inputs.tenant) ] }}
+      AWS_ROLE_ARN:    ${{ secrets.AWS_ROLE_ARN }}
+      TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+
     steps:
       - uses: actions/checkout@v3
+
       - name: Configure AWS creds
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-region: us-east-1
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
+
       - name: 🔍 Data Validation
         run: |
           chmod +x ./scripts/validate-data.sh
           ./scripts/validate-data.sh \
             --tenant $TENANT \
             --env    $ENVIRONMENT
+
       - name: 🔀 Switch Reads
         run: |
           chmod +x ./scripts/switch-read-endpoint.sh
           ./scripts/switch-read-endpoint.sh \
             --tenant $TENANT \
             --env    $ENVIRONMENT
+
       - name: ⏸️ Pause Writes
         run: |
           chmod +x ./scripts/pause-writes.sh
           ./scripts/pause-writes.sh \
             --tenant $TENANT \
             --env    $ENVIRONMENT
+
       - name: 🛑 Stop CDC
         run: |
           chmod +x ./scripts/stop-cdc.sh
@@ -158,6 +206,7 @@ jobs:
             --dms-task-arn $DMS_TASK_ARN \
             --tenant        $TENANT \
             --env           $ENVIRONMENT
+
       - name: 🏃‍♀️ Run Post‑Migration SQL
         run: |
           chmod +x ./scripts/post-migration.sh
@@ -169,6 +218,7 @@ jobs:
             --database $TGT_DB \
             --tenant   $TENANT \
             --env      $ENVIRONMENT
+
       - name: ✅ Final Validation
         run: |
           chmod +x ./scripts/post-migration-validation.sh
@@ -176,24 +226,27 @@ jobs:
             --tenant $TENANT \
             --env    $ENVIRONMENT \
             --post
+
       - name: 🖋️ Switch Writes
         run: |
           chmod +x ./scripts/switch-write-endpoint.sh
           ./scripts/switch-write-endpoint.sh \
             --tenant $TENANT \
             --env    $ENVIRONMENT
-      - name: 🧹 Cleanup DMS
-        run: |
-          chmod +x ./scripts/cleanup-dms.sh
-          ./scripts/cleanup-dms.sh \
-            --dms-task-arn $DMS_TASK_ARN \
-            --tenant        $TENANT \
-            --env           $ENVIRONMENT
+
+      # - name: 🧹 Cleanup DMS
+      #   run: |
+      #     chmod +x ./scripts/cleanup-dms.sh
+      #     ./scripts/cleanup-dms.sh \
+      #       --dms-task-arn $DMS_TASK_ARN \
+      #       --tenant        $TENANT \
+      #       --env           $ENVIRONMENT
+
       - name: 📣 Notify Success to MS Teams
         run: |
           chmod +x ./scripts/notify.sh
           ./scripts/notify.sh \
-            --solution \
+            --solution $SOLUTION \
             --tenant   $TENANT \
             --env      $ENVIRONMENT \
             --webhook  "$TEAMS_WEBHOOK_URL"
